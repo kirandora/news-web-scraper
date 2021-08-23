@@ -1,0 +1,33 @@
+service: web-scraper
+
+provider:
+  name: aws
+  runtime: python3.9
+  stage: 'dev'
+  region: eu-central-1
+  memorySize: 128
+  timeout: 300 # seconds
+
+
+package:
+  individually: true
+  exclude:
+    - "**/.eggs/**"
+    - "**/.pytest_cache/**"
+    - "**/*.egg-info/**"
+    - "**/tests/**"
+    - "**/setup.py"
+    - "**/test_*.py"
+    - "**/*_test.py"
+
+functions:
+  scraper:
+    handler: lambda_handler.handle
+    module: scraper
+    memorySize: 512
+    environment:
+      NEWS_KAFKA_TOPIC: KafkaTopic-${opt:stage, self:provider.stage}
+    events:
+      - schedule: cron(0 6,12,18 * * ? *)
+    vendor: ./utils # workaround for including common libs, since package.include has a bug and not working when it package.individually is set to true
+
